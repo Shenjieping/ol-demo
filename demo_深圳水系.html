@@ -1,0 +1,120 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>水系</title>
+		<link href="ol/ol.css" rel="stylesheet" type="text/css" />
+		<script type="text/javascript" src="ol/include-ol.js"></script>
+		<script src="ol/olMap.js" type="text/javascript"></script>
+		<script src="jquery/jquery.js"></script>
+		<style type="text/css">
+			#pannel {
+				position: absolute;
+				right: 20px;
+				top: 20px;
+				width: 180px;
+				height: 50px;
+				background-color: #eeefed;
+				border-radius: 3px;
+				border: solid 1px #A0A0A5;
+				box-shadow: 0px 5px 9px #8A8A8A;
+			}
+
+			span {
+				position: inherit;
+				top: 10px;
+				left: 10px;
+			}
+
+			#zoom {}
+		</style>
+	</head>
+	<body>
+		<div id="map"></div>
+		<div id="pannel">
+			<span id="zoom">地图当前缩放级别：4</span>
+		</div>
+		<script type="text/javascript">
+			var map,
+				serviceUrl ='http://10.21.239.110:50001/proxy/server/ED74E96405B1435B830B90FBE50E4BED/25A0E34254A04FCFB2E3276924A03615'
+				+'/query?where=1%3D1&text=&objectIds=&time=&geometry=&geometryType=esriGeometryEnvelope&inSR=&spatialRel=esriSpatialRelIntersects&relationParam=&outFields=&returnGeometry=true&returnTrueCurves=false&maxAllowableOffset=&geometryPrecision=&outSR=&having=&returnIdsOnly=false&returnCountOnly=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&returnZ=false&returnM=false&gdbVersion=&historicMoment=&returnDistinctValues=false&resultOffset=&resultRecordCount=&queryByDistance=&returnExtentOnly=false&datumTransformation=&parameterValues=&rangeValues=&quantizationParameters=&f=pjson';
+
+			function initmap() {
+				var resolutions = [0.0013732910156250004, 0.0006866455078125002, 0.0003433227539062501, 0.00017166137695312505,
+					0.00008583068847656253, 0.000042915344238281264, 0.000021457672119140632, 0.000010728836059570316,
+					0.000005364418029785158, 0.000002682209014892579, 0.0000013411045074462895
+				];
+				var projection = ol.proj.get('EPSG:4326');
+				map = new ol.Map({
+					projection: 'EPSG:4326',
+					controls: [new ol.control.Zoom()],
+					target: 'map',
+					layers: [
+						new ol.layer.Tile({
+							source: new ol.source.XYZ({
+								projection: 'EPSG:4326',
+								url: 'http://10.21.239.110:50001/proxy/layer/13E75E58EB7248A28D410262604095AF/25A0E34254A04FCFB2E3276924A03615' +
+									'/tile/{z}/{y}/{x}',
+								tileGrid: new ol.tilegrid.TileGrid({
+									origin: [-180.0, 90.0],
+									resolutions: resolutions,
+									tileSize: [256, 256],
+								})
+							})
+						})
+					],
+					view: new ol.View({
+						projection: 'EPSG:4326',
+						resolutions: resolutions,
+						center: [114.23303593609617, 22.55775183094625], //ol.proj.transform([/*94.65424626536483, 40.14363363555644*/114.34, 30.55], 'EPSG:4326', 'EPSG:3857'),
+						zoom: 8
+					})
+				});
+
+				var esrijsonFormat = new ol.format.EsriJSON();
+				var vectorSource=new ol.source.Vector();
+				$.ajax({
+					url: serviceUrl,
+					dataType: 'jsonp',
+					success: function(response) {
+						if (response.error) {
+							alert(response.error.message + '\n' +
+								response.error.details.join('\n'));
+						} else {
+							// dataProjection will be read from document
+							var features = esrijsonFormat.readFeatures(response, {
+								featureProjection: projection
+							});
+							if (features.length > 0) {
+								vectorSource.addFeatures(features);
+								// console.log(features)
+							}
+							
+						}
+					}
+				})
+				var resultVector = new ol.layer.Vector({
+					source: vectorSource,
+					style: new ol.style.Style({
+						fill: new ol.style.Fill({
+							color: 'rgba(253, 41, 18, 0.4)'
+						}),
+						stroke: new ol.style.Stroke({
+							color: '#FD0B06',
+							width: 2
+						}),
+						image: new ol.style.Circle({
+							radius: 7,
+							fill: new ol.style.Fill({
+								color: '#FD0B06'
+							})
+						})
+					})
+				});
+				map.addLayer(resultVector);
+			}
+			initmap();
+		</script>
+	</body>
+</html>
